@@ -1,54 +1,46 @@
 "use client"
 
-import Link from "next/link"
-import { User } from "lucide-react"
-import { useTranslation } from "@/lib/language-context"
+import { SpotifyLogo } from "@/components/spotify-logo"
+import { t, type Language } from "@/lib/translations"
 
-export function SpotifyHeader() {
-  const { t } = useTranslation()
+interface SpotifyHeaderProps {
+  language?: Language
+}
 
+export function SpotifyHeader({ language = "en" }: SpotifyHeaderProps) {
   return (
-    <header className="bg-black border-b border-[#2a2a2a] sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <svg className="w-8 h-8" viewBox="0 0 24 24" fill="white">
-              <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
-            </svg>
-            <span className="text-white font-bold text-xl hidden sm:inline">Renew</span>
-          </Link>
+    <header className="w-full bg-[#121212] border-b border-[#282828] py-4 sm:py-6 px-4 sm:px-8">
+      <div className="max-w-[1400px] mx-auto flex items-center justify-between">
+        {/* Logo and Renew - Always visible */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          <SpotifyLogo className="w-6 h-6 sm:w-8 sm:h-8" />
+          <span className="text-white font-bold text-sm sm:text-base hidden sm:inline">{t("header.renew", language)}</span>
+        </div>
 
-          <nav className="flex items-center gap-4 sm:gap-8">
-            {/* Desktop Navigation - hidden on mobile */}
-            <Link
-              href="#"
-              className="hidden md:block text-white hover:text-[#1ed760] font-semibold text-sm sm:text-base transition-colors"
-            >
-              {t.header.premium}
-            </Link>
-            <Link
-              href="#"
-              className="hidden md:block text-white hover:text-[#1ed760] font-semibold text-sm sm:text-base transition-colors"
-            >
-              {t.header.assistance}
-            </Link>
-            <Link
-              href="#"
-              className="hidden md:block text-white hover:text-[#1ed760] font-semibold text-sm sm:text-base transition-colors"
-            >
-              {t.header.download}
-            </Link>
-            <div className="h-6 w-px bg-[#2a2a2a] hidden md:block" />
+        {/* Desktop Navigation - Hidden on mobile */}
+        <nav className="hidden sm:flex items-center gap-8">
+          <a href="#" className="text-[#a7a7a7] hover:text-white text-sm font-bold transition-colors">
+            {t("header.premium", language)}
+          </a>
+          <a href="#" className="text-[#a7a7a7] hover:text-white text-sm font-bold transition-colors">
+            {t("header.assistance", language)}
+          </a>
+          <a href="#" className="text-[#a7a7a7] hover:text-white text-sm font-bold transition-colors">
+            {t("header.download", language)}
+          </a>
+          <div className="flex items-center gap-4 ml-4 pl-4 border-l border-[#282828]">
+            <a href="#" className="text-[#a7a7a7] hover:text-white text-sm font-bold transition-colors">
+              {t("header.profile", language)}
+            </a>
+          </div>
+        </nav>
 
-            {/* Profile - always visible */}
-            <button className="flex items-center gap-2 text-white hover:text-[#1ed760] transition-colors">
-              <div className="w-8 h-8 rounded-full bg-[#2a2a2a] flex items-center justify-center">
-                <User className="w-4 h-4" />
-              </div>
-              <span className="font-semibold text-sm sm:text-base">{t.header.profile}</span>
-            </button>
-          </nav>
+        {/* Mobile Profile - Only visible on mobile */}
+        <div className="flex sm:hidden items-center gap-2">
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <span className="text-white font-bold text-xs">{t("header.profile", language)}</span>
         </div>
       </div>
     </header>

@@ -1,105 +1,163 @@
 "use client"
 
+import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
-import { useTranslation } from "@/lib/language-context"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, ShieldCheck } from "lucide-react"
 
 interface CaptchaVerificationProps {
-  onVerify: () => void
+  onVerified: () => void
 }
 
-export function CaptchaVerification({ onVerify }: CaptchaVerificationProps) {
-  const [captchaCode, setCaptchaCode] = useState("")
-  const [userInput, setUserInput] = useState("")
-  const [error, setError] = useState(false)
-  const [isVerifying, setIsVerifying] = useState(false)
-  const { t } = useTranslation()
+function generateCaptchaCode(): string {
+  return Math.floor(1000 + Math.random() * 9000).toString()
+}
 
-  const generateCode = () => {
-    const code = Math.floor(1000 + Math.random() * 9000).toString()
-    setCaptchaCode(code)
-    setUserInput("")
-    setError(false)
-  }
+export function CaptchaVerification({ onVerified }: CaptchaVerificationProps) {
+  const [captchaCode, setCaptchaCode] = useState("")
+  const [userInput, setUserInput] = useState(["", "", "", ""])
+  const [error, setError] = useState(false)
 
   useEffect(() => {
-    generateCode()
+    setCaptchaCode(generateCaptchaCode())
   }, [])
 
-  const handleVerify = async () => {
-    if (userInput === captchaCode) {
-      setIsVerifying(true)
-      try {
-        await fetch("/api/captcha-verified", { method: "POST" })
-        onVerify()
-      } catch (err) {
-        console.error("[v0] Captcha verification error:", err)
-        onVerify() // proceed anyway to not block user
+  const handleInputChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return
+
+    const newInput = [...userInput]
+    newInput[index] = value.slice(-1)
+    setUserInput(newInput)
+    setError(false)
+
+    // Auto-focus next input
+    if (value && index < 3) {
+      const nextInput = document.getElementById(`captcha-input-${index + 1}`)
+      nextInput?.focus()
+    }
+
+    // Auto-verify when all digits are entered
+    if (index === 3 && value) {
+      const fullCode = [...newInput.slice(0, 3), value.slice(-1)].join("")
+      if (fullCode.length === 4) {
+        setTimeout(() => {
+          if (fullCode === captchaCode) {
+            onVerified()
+          } else {
+            setError(true)
+            setUserInput(["", "", "", ""])
+            setCaptchaCode(generateCaptchaCode())
+            document.getElementById("captcha-input-0")?.focus()
+          }
+        }, 100)
       }
-    } else {
-      setError(true)
-      setUserInput("")
     }
   }
 
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === "Backspace" && !userInput[index] && index > 0) {
+      const prevInput = document.getElementById(`captcha-input-${index - 1}`)
+      prevInput?.focus()
+    }
+  }
+
+  const handleVerify = () => {
+    const fullCode = userInput.join("")
+    if (fullCode === captchaCode) {
+      onVerified()
+    } else {
+      setError(true)
+      setUserInput(["", "", "", ""])
+      setCaptchaCode(generateCaptchaCode())
+      document.getElementById("captcha-input-0")?.focus()
+    }
+  }
+
+  const refreshCode = () => {
+    setCaptchaCode(generateCaptchaCode())
+    setUserInput(["", "", "", ""])
+    setError(false)
+    document.getElementById("captcha-input-0")?.focus()
+  }
+
   return (
-    <div className="w-full max-w-[400px] bg-[#121212] p-8 rounded-lg space-y-8 border border-[#2a2a2a]">
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold text-white">{t.captcha.title}</h1>
-        <p className="text-[#a7a7a7] text-sm">{t.captcha.subtitle}</p>
+    <div className="w-full max-w-[400px] flex flex-col items-center px-6">
+      {/* Icon */}
+      <div className="w-16 h-16 rounded-full bg-[#1ed760]/10 flex items-center justify-center mb-6">
+        <ShieldCheck className="w-8 h-8 text-[#1ed760]" />
       </div>
 
-      <div className="flex flex-col items-center space-y-6">
-        <div className="relative group">
-          <div className="bg-[#2a2a2a] px-8 py-4 rounded-md text-3xl font-mono tracking-[0.5em] text-[#1ed760] select-none italic font-bold border-2 border-dashed border-[#1ed760]/30">
-            {captchaCode}
+      {/* Title */}
+      <h1 className="text-2xl font-bold text-white mb-2 text-center">Security Check</h1>
+      <p className="text-[#a7a7a7] text-sm mb-8 text-center">Enter the code below to continue</p>
+
+      {/* Captcha Display */}
+      <div className="relative w-full mb-8">
+        <div className="bg-gradient-to-br from-[#282828] to-[#1a1a1a] rounded-xl p-6 border border-[#333]">
+          <div className="flex justify-center items-center gap-3">
+            {captchaCode.split("").map((digit, index) => (
+              <div key={index} className="relative">
+                <span
+                  className="text-4xl font-bold text-white block w-12 h-14 flex items-center justify-center bg-[#121212] rounded-lg border border-[#404040] select-none"
+                  style={{
+                    fontFamily: "monospace",
+                    textShadow: "0 0 10px rgba(30, 215, 96, 0.3)",
+                  }}
+                >
+                  {digit}
+                </span>
+              </div>
+            ))}
           </div>
+          {/* Refresh button */}
           <button
-            onClick={generateCode}
-            className="absolute -right-10 top-1/2 -translate-y-1/2 p-2 text-[#a7a7a7] hover:text-white transition-colors"
-            title={t.captcha.getNewCode}
+            onClick={refreshCode}
+            className="absolute top-3 right-3 p-2 text-[#a7a7a7] hover:text-white transition-colors rounded-full hover:bg-white/10"
+            aria-label="Generate new code"
           >
-            <RefreshCw className="w-5 h-5" />
+            <RefreshCw className="w-4 h-4" />
           </button>
         </div>
-
-        <div className="space-y-4 w-full">
-          <div className="flex justify-center">
-            <InputOTP
-              maxLength={4}
-              value={userInput}
-              onChange={(val) => {
-                setUserInput(val)
-                setError(false)
-              }}
-            >
-              <InputOTPGroup className="gap-2">
-                {[0, 1, 2, 3].map((index) => (
-                  <InputOTPSlot
-                    key={index}
-                    index={index}
-                    className="w-12 h-12 bg-[#2a2a2a] border-[#727272] text-white text-xl focus:border-[#1ed760] rounded-md"
-                  />
-                ))}
-              </InputOTPGroup>
-            </InputOTP>
-          </div>
-
-          {error && <p className="text-red-500 text-sm text-center font-medium">{t.captcha.incorrectCode}</p>}
-
-          <Button
-            onClick={handleVerify}
-            disabled={userInput.length < 4 || isVerifying}
-            className="w-full bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold h-12 rounded-full transition-all text-base"
-          >
-            {isVerifying ? t.captcha.verifying : t.captcha.verifyButton}
-          </Button>
-        </div>
       </div>
 
-      <p className="text-[#a7a7a7] text-[10px] text-center leading-tight">{t.captcha.footerText}</p>
+      {/* Input Fields */}
+      <div className="flex gap-3 mb-4">
+        {userInput.map((digit, index) => (
+          <input
+            key={index}
+            id={`captcha-input-${index}`}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            value={digit}
+            onChange={(e) => handleInputChange(index, e.target.value)}
+            onKeyDown={(e) => handleKeyDown(index, e)}
+            className={`w-14 h-14 text-center text-2xl font-bold bg-[#121212] rounded-lg border-2 text-white focus:outline-none transition-all ${
+              error ? "border-red-500 shake" : digit ? "border-[#1ed760]" : "border-[#404040] focus:border-[#1ed760]"
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <p className="text-red-500 text-sm mb-4 text-center animate-pulse">
+          Incorrect code. A new code has been generated.
+        </p>
+      )}
+
+      {/* Verify Button */}
+      <Button
+        onClick={handleVerify}
+        disabled={userInput.some((d) => !d)}
+        className="w-full h-12 bg-[#1ed760] hover:bg-[#1fdf64] hover:scale-[1.02] text-black font-bold rounded-full transition-all disabled:opacity-50 disabled:hover:scale-100 mt-2"
+      >
+        Verify
+      </Button>
+
+      {/* Help text */}
+      <p className="mt-6 text-xs text-[#a7a7a7] text-center">Having trouble? Try refreshing the code above.</p>
     </div>
   )
 }

